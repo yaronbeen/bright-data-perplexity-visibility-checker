@@ -51,12 +51,15 @@ sources at all (occasionally it returns none).
 
 **There is no API token in this repo or in the deployed Worker.** Each visitor
 pastes their **own** Bright Data token; it's forwarded per request to Bright Data
-and **not stored on our servers** (the Worker keeps no database and doesn't log
-the token). If you tick **"Remember in this browser"**, it's saved only in your
-browser's `localStorage`; otherwise it isn't persisted anywhere. Your key, your
-credits — each check spends a few cents of **your own** Bright Data balance, and
-`POST /api/check` is rate-limited per IP. (A proxy is needed only because Bright
-Data's API doesn't send CORS headers, so a browser can't call it directly.)
+and **not stored anywhere** — the Worker keeps no database, doesn't log the token,
+and the page does not save it in your browser (no `localStorage`, no cookies).
+Your key, your credits — each check uses about **US$0.0015 per record** of **your
+own** Bright Data pay-as-you-go balance, and the `/api/*` endpoints are
+rate-limited per IP. (A proxy is needed only because Bright Data's API doesn't
+send CORS headers, so a browser can't call it directly.)
+
+> This is an independent project — not affiliated with or endorsed by Bright Data,
+> OpenAI, or Perplexity.
 
 Create a Bright Data account at [brightdata.com](https://brightdata.com); the API
 token lives in your account settings under *API keys*.
@@ -82,8 +85,10 @@ curl -H "Authorization: Bearer $BRIGHT_DATA_API_TOKEN" -H "Content-Type: applica
   "https://api.brightdata.com/datasets/v3/scrape?dataset_id=gd_m7dhdot1vw9a7gc1n&notify=false&include_errors=true"
 ```
 
-(For long jobs use the async pattern: `POST /datasets/v3/trigger` → poll
-`GET /datasets/v3/progress/{id}` → download `GET /datasets/v3/snapshot/{id}?format=json`.)
+The app calls the synchronous `/scrape` endpoint above (it returns a `snapshot_id`
+to poll for long jobs). Bright Data also offers a fully async flow:
+`POST /datasets/v3/trigger` → poll `GET /datasets/v3/progress/{id}` →
+download `GET /datasets/v3/snapshot/{id}?format=json`.
 
 ---
 
