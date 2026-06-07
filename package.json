@@ -10,7 +10,8 @@
   "description": "See whether Perplexity cites your brand as a source. Live citation checker powered by Bright Data.",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "test": "node --test test/"
   },
   "devDependencies": {
     "wrangler": "^4.86.0"
