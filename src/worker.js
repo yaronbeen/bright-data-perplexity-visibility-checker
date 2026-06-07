@@ -16,8 +16,8 @@
 
 const DATASET_ID = "gd_m7dhdot1vw9a7gc1n"; // Perplexity Search - search by prompt
 const BD_BASE = "https://api.brightdata.com";
-const scrapeUrl = (id) =>
-  `${BD_BASE}/datasets/v3/scrape?dataset_id=${id}&notify=false&include_errors=true`;
+const triggerUrl = (id) =>
+  `${BD_BASE}/datasets/v3/trigger?dataset_id=${id}&notify=false&include_errors=true`;
 const progressUrl = (sid) => `${BD_BASE}/datasets/v3/progress/${sid}`;
 const snapshotUrl = (sid) => `${BD_BASE}/datasets/v3/snapshot/${sid}?format=json`;
 const SNAPSHOT_RE = /^s[dn]_[a-z0-9]+$/i;
@@ -62,12 +62,6 @@ async function rl(env, request, binding) {
   return false;
 }
 
-function looksLikeRecord(rec) {
-  return !!rec && typeof rec === "object" && !Array.isArray(rec) &&
-    ("answer_text" in rec || "answer" in rec || "answer_text_markdown" in rec ||
-     "citations" in rec || "sources" in rec || "search_sources" in rec);
-}
-
 async function handleCheck(request, env) {
   const token = getToken(request);
   if (!token) return json({ error: "Missing Bright Data API token." }, 401);
@@ -98,26 +92,19 @@ async function handleCheck(request, env) {
     index: 1,
   };
 
+  // Async: trigger the job and return a snapshot_id immediately (no held connection),
+  // then the client polls /api/status + /api/result. This avoids edge/connection timeouts.
   try {
-    const r = await fetch(scrapeUrl(DATASET_ID), {
+    const r = await fetch(triggerUrl(DATASET_ID), {
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify({ input: [input] }),
     });
     const text = await r.text();
     let data; try { data = JSON.parse(text); } catch { data = { raw: text }; }
-
-    const snapId = (data && !Array.isArray(data) && data.snapshot_id) || null;
-    if ((r.status === 202 || (r.ok && snapId && !looksLikeRecord(data))) && snapId) {
-      return json({ ok: true, brand, prompt, country: input.country, done: false, snapshot_id: snapId });
-    }
     if (!r.ok) return json({ error: humanError(data, text, r.status) }, r.status);
-
-    const record = Array.isArray(data) ? data[0] : data;
-    if (!looksLikeRecord(record)) {
-      return json({ error: "Bright Data returned an unexpected response. Please try again." }, 502);
-    }
-    return json({ ok: true, brand, prompt, country: input.country, done: true, record });
+    if (!data || !data.snapshot_id) return json({ error: "Bright Data did not return a snapshot id." }, 502);
+    return json({ ok: true, brand, prompt, country: input.country, done: false, snapshot_id: data.snapshot_id });
   } catch (e) {
     return json({ error: e?.message || "Failed to reach Bright Data." }, 502);
   }
