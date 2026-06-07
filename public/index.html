@@ -152,8 +152,8 @@
 
   footer{margin:48px 0 30px;text-align:center}
   footer .love{font-weight:800;font-size:15px} footer .love a{text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:2px}
-  footer .pw{margin-top:8px;font-size:12px;color:#7a8a90} footer .pw a{font-weight:700}
-  footer .indep{margin-top:6px;font-size:11px;color:#94a3a8}
+  footer .pw{margin-top:8px;font-size:12px;color:#4e5a60} footer .pw a{font-weight:700}
+  footer .indep{margin-top:6px;font-size:11px;color:#566169}
 
   @media(max-width:680px){
     .wrap{padding:0 15px}
@@ -217,7 +217,7 @@
         <button class="reveal" id="revealBtn" type="button" aria-pressed="false" aria-label="Show token">show</button>
       </div>
       <div class="keyhint">No token? <a href="https://brightdata.com" target="_blank" rel="noopener">Create a Bright Data account →</a> Bright Data is a web data platform; its API runs the live query.</div>
-      <p class="costnote">Each check runs one live query through <b>your own</b> Bright Data account and uses your credits (about US$0.0015 per record on pay-as-you-go). Your token is sent to Bright Data via this page’s server and is not stored or logged — not on our servers, not in your browser.</p>
+      <p class="costnote">Each check runs one live query through <b>your own</b> Bright Data account and uses your credits (about US$0.0015 per record on Bright Data’s pay-as-you-go pricing at the time of writing — check Bright Data for current rates). Your token is sent to Bright Data via this page’s server and is not stored or logged — not on our servers, not in your browser.</p>
     </div>
     <div class="actions">
       <button class="btn btn-primary btn-lg" id="runBtn">🔮 Ask Perplexity about my brand</button>
@@ -231,7 +231,7 @@
     <div class="estate"><span class="pulse" id="pulse" aria-hidden="true"></span><span id="etext" aria-live="polite">starting…</span></div>
     <div class="bar"><i id="bar"></i></div>
     <div class="statusline" id="statusline" aria-live="polite">Running a live Perplexity query — usually about 30 seconds (we’ll keep waiting up to 4 minutes).</div>
-    <div class="runfoot"><button class="btn btn-ghost" id="cancelBtn">Cancel</button></div>
+    <div class="runfoot"><button class="btn btn-ghost" id="cancelBtn">Stop waiting</button> <span class="muted" style="font-size:12px">— stops the timer here; the query may still finish on Bright Data and use credits.</span></div>
   </section>
 
   <section class="results" id="results" aria-live="polite"></section>
@@ -260,6 +260,8 @@
   ];
   let run = null;
   const $ = (id) => document.getElementById(id);
+  // Honor reduced-motion for JS-driven scrolling (CSS scroll-behavior can't override these).
+  const SB = (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) ? "auto" : "smooth";
 
   // ---- pure helpers ---------------------------------------------------------
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g,
@@ -342,7 +344,7 @@
   function csvCell(x) { let s = String(x == null ? "" : x); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; }
 
   // ---- small UI helpers -----------------------------------------------------
-  function showErr(m) { const e = $("err"); e.textContent = m; e.style.display = "block"; e.scrollIntoView({ behavior: "smooth", block: "center" }); }
+  function showErr(m) { const e = $("err"); e.textContent = m; e.style.display = "block"; e.scrollIntoView({ behavior: SB, block: "center" }); }
   function clearErr() { const e = $("err"); e.style.display = "none"; e.textContent = ""; }
   function buildChips() {
     $("chips").innerHTML = EXAMPLES.map((e) => `<button type="button" class="chip" data-q="${esc(e)}">${esc(e)}</button>`).join("");
@@ -416,7 +418,7 @@
     $("runBtn").innerHTML = on ? "running…" : "🔮 Ask Perplexity about my brand";
     $("runner").style.display = on ? "block" : "none";
     $("runner").setAttribute("aria-hidden", on ? "false" : "true");
-    if (on) { $("results").style.display = "none"; $("results").innerHTML = ""; $("runner").scrollIntoView({ behavior: "smooth", block: "center" }); }
+    if (on) { $("results").style.display = "none"; $("results").innerHTML = ""; $("runner").scrollIntoView({ behavior: SB, block: "center" }); }
   }
   function setEng(kind, text) { $("pulse").className = "pulse" + (kind === "done" ? " done" : kind === "fail" ? " fail" : ""); $("etext").textContent = text; }
   const LINES = [
@@ -483,12 +485,16 @@
       const a = b.previousElementSibling; a.classList.toggle("open");
       b.textContent = a.classList.contains("open") ? "Show less ↑" : "Read full answer ↓";
     }));
-    $("results").querySelectorAll(".related .rp").forEach((c) => c.addEventListener("click", () => { $("prompt").value = c.dataset.q; window.scrollTo({ top: 0, behavior: "smooth" }); $("prompt").focus(); }));
+    $("results").querySelectorAll(".answer").forEach((a) => {
+      const b = a.nextElementSibling;
+      if (b && b.classList.contains("moreBtn") && a.scrollHeight > a.clientHeight + 4) b.style.display = "";
+    });
+    $("results").querySelectorAll(".related .rp").forEach((c) => c.addEventListener("click", () => { $("prompt").value = c.dataset.q; window.scrollTo({ top: 0, behavior: SB }); $("prompt").focus(); }));
     $("copyMd") && $("copyMd").addEventListener("click", copyReport);
     $("dlJson") && $("dlJson").addEventListener("click", dlJson);
     $("dlCsv") && $("dlCsv").addEventListener("click", dlCsv);
-    $("again") && $("again").addEventListener("click", () => { $("results").style.display = "none"; window.scrollTo({ top: 0, behavior: "smooth" }); $("brand").focus(); });
-    $("results").scrollIntoView({ behavior: "smooth", block: "start" });
+    $("again") && $("again").addEventListener("click", () => { $("results").style.display = "none"; window.scrollTo({ top: 0, behavior: SB }); $("brand").focus(); });
+    $("results").scrollIntoView({ behavior: SB, block: "start" });
   }
 
   function engineCard(p, brand) {
@@ -499,7 +505,6 @@
       `<span class="tag2 tag-info">${p.cites.length} sources</span>`,
     ];
     const md = p.answerMd || "(no answer returned)";
-    const long = md.length > 320;
     const citeList = p.cites.length ? `<div class="citehead">Sources Perplexity cited</div><ul class="cites">${p.cites.slice(0, 12).map((c) => {
       const you = isYou(c.domain, brand), u = safeUrl(c.url);
       return `<li class="cite ${you ? "you" : ""}"><span class="rank">${c.position}</span>
@@ -508,7 +513,7 @@
     }).join("")}</ul>` : "";
     const related = p.related.length ? `<div class="citehead">People also ask</div><div class="related">${p.related.slice(0, 4).map((r) => `<button type="button" class="rp" data-q="${esc(r)}">${esc(r)}</button>`).join("")}</div>` : "";
     return `<div class="card ecard"><div class="ec-top"><div class="ec-name">${CFG.icon} ${CFG.label}</div><div class="ec-tags">${tags.join("")}</div></div>
-      <div class="answer">${renderAnswer(md, brand)}<div class="fade"></div></div>${long ? `<button class="moreBtn">Read full answer ↓</button>` : ""}${citeList}${related}</div>`;
+      <div class="answer">${renderAnswer(md, brand)}<div class="fade"></div></div><button class="moreBtn" style="display:none">Read full answer ↓</button>${citeList}${related}</div>`;
   }
 
   // ---- export ---------------------------------------------------------------
@@ -521,7 +526,7 @@
         `**Answer:** ${p.answer.replace(/\s+/g, " ").trim()}`, ``);
       if (p.cites.length) { L.push(`**Sources cited:**`); p.cites.forEach((c) => L.push(`${c.position}. ${c.domain || domainOf(c.url)}${safeUrl(c.url) ? " — " + safeUrl(c.url) : ""}`)); L.push(``); }
     }
-    L.push(`Note: Perplexity’s answer and sources vary between runs — this is one live snapshot.`, `---`, `Generated by perplexity-visibility-checker · built by Yaron (nofluff.online) · powered by Bright Data`);
+    L.push(`Note: Perplexity’s answer and sources vary between runs — this is one live snapshot.`, `---`, `Generated by perplexity-visibility-checker · built by Yaron (nofluff.online) · powered by Bright Data · independent project, not affiliated with Bright Data, OpenAI, or Perplexity`);
     return L.join("\n");
   }
   function download(name, text, type) {

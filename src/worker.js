@@ -22,13 +22,10 @@ const progressUrl = (sid) => `${BD_BASE}/datasets/v3/progress/${sid}`;
 const snapshotUrl = (sid) => `${BD_BASE}/datasets/v3/snapshot/${sid}?format=json`;
 const SNAPSHOT_RE = /^s[dn]_[a-z0-9]+$/i;
 
-const corsHeaders = (extra = {}) => ({
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-  "Access-Control-Allow-Headers": "authorization,content-type",
-  "Access-Control-Max-Age": "86400",
-  ...extra,
-});
+// Same-origin only: the page and /api are served by THIS same Worker, so we emit
+// no cross-origin (CORS) headers — other websites can't drive these endpoints with
+// a visitor's token.
+const corsHeaders = (extra = {}) => ({ ...extra });
 
 const json = (data, status = 200, extra = {}) =>
   new Response(JSON.stringify(data), {

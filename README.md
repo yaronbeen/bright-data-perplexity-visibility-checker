@@ -6,8 +6,8 @@ Perplexity answers every question with a ranked list of **sources**. That list
 *is* the game: if your domain isn't on it, you don't exist at the moment your
 buyer is deciding.
 
-Type your brand and a buyer question. This tool runs a **real, live Perplexity
-session** (via Bright Data's Perplexity scraper) and tells you whether you were:
+Type your brand and a buyer question. This tool runs your question through
+Perplexity live (via Bright Data's Perplexity dataset) and tells you whether you were:
 
 - **Cited** as a source (and at what rank),
 - **Named** in the answer text, or

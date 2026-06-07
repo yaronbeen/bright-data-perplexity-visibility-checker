@@ -8,7 +8,7 @@
     "binding": "ASSETS",
     "not_found_handling": "single-page-application"
   },
-  "observability": { "enabled": true },
+  "observability": { "enabled": false },
 
   // Per-IP rate limiting for POST /api/check (abuse protection).
   "unsafe": {
